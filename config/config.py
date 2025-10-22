@@ -33,6 +33,10 @@ class Config:
     SEC_RATE_LIMIT = int(os.getenv('SEC_RATE_LIMIT', 10))
     SEC_BASE_URL = 'https://www.sec.gov'
 
+    # ==================== FMP (Financial Modeling Prep) Settings ====================
+    FMP_API_KEY = os.getenv('FMP_API_KEY')
+    FMP_RATE_LIMIT = int(os.getenv('FMP_RATE_LIMIT', 250))  # requests per day
+
     # ==================== Database Settings ====================
     DATABASE_PATH = PROJECT_ROOT / 'data' / 'sentiment.db'
 

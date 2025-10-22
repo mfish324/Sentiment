@@ -133,12 +133,46 @@ class DatabaseManager:
             )
         ''')
 
+        # Table 4: FMP Institutional Holdings
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS institutional_holdings (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                ticker TEXT NOT NULL,
+                holder TEXT NOT NULL,
+                shares INTEGER,
+                date_reported DATE,
+                change INTEGER,
+                percent_held REAL,
+                collected_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE(ticker, holder, date_reported)
+            )
+        ''')
+
+        # Table 5: FMP Insider Trades
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS fmp_insider_trades (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                ticker TEXT NOT NULL,
+                filing_date DATE,
+                transaction_date DATE,
+                reporting_name TEXT,
+                transaction_type TEXT,
+                securities_owned INTEGER,
+                securities_transacted INTEGER,
+                price REAL,
+                collected_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE(ticker, reporting_name, transaction_date, securities_transacted)
+            )
+        ''')
+
         # Create indexes for faster queries
         cursor.execute('CREATE INDEX IF NOT EXISTS idx_tweets_ticker ON tweets(ticker)')
         cursor.execute('CREATE INDEX IF NOT EXISTS idx_tweets_created ON tweets(created_at)')
         cursor.execute('CREATE INDEX IF NOT EXISTS idx_filings_ticker ON sec_filings(ticker)')
         cursor.execute('CREATE INDEX IF NOT EXISTS idx_filings_date ON sec_filings(filing_date)')
         cursor.execute('CREATE INDEX IF NOT EXISTS idx_summary_ticker_date ON sentiment_summary(ticker, date)')
+        cursor.execute('CREATE INDEX IF NOT EXISTS idx_institutional_ticker ON institutional_holdings(ticker)')
+        cursor.execute('CREATE INDEX IF NOT EXISTS idx_fmp_insider_ticker ON fmp_insider_trades(ticker)')
 
         conn.commit()
         conn.close()
@@ -362,6 +396,108 @@ class DatabaseManager:
 
         except Exception as e:
             logger.error(f"Error querying SEC filings: {e}")
+            return []
+
+    def insert_institutional_holding(self, holding_data: Dict) -> bool:
+        """
+        Insert an institutional holding record into the database.
+
+        Args:
+            holding_data: Dictionary with institutional holding information
+
+        Returns:
+            True if successful, False otherwise
+        """
+        try:
+            conn = self.get_connection()
+            cursor = conn.cursor()
+
+            cursor.execute('''
+                INSERT OR IGNORE INTO institutional_holdings (
+                    ticker, holder, shares, date_reported, change, percent_held
+                ) VALUES (?, ?, ?, ?, ?, ?)
+            ''', (
+                holding_data['ticker'],
+                holding_data.get('holder', ''),
+                holding_data.get('shares', 0),
+                holding_data.get('dateReported', None),
+                holding_data.get('change', 0),
+                holding_data.get('percentHeld', 0.0)
+            ))
+
+            conn.commit()
+            conn.close()
+            return True
+
+        except Exception as e:
+            logger.error(f"Error inserting institutional holding: {e}")
+            return False
+
+    def insert_fmp_insider_trade(self, trade_data: Dict) -> bool:
+        """
+        Insert an FMP insider trade into the database.
+
+        Args:
+            trade_data: Dictionary with insider trade information
+
+        Returns:
+            True if successful, False otherwise
+        """
+        try:
+            conn = self.get_connection()
+            cursor = conn.cursor()
+
+            cursor.execute('''
+                INSERT OR IGNORE INTO fmp_insider_trades (
+                    ticker, filing_date, transaction_date, reporting_name,
+                    transaction_type, securities_owned, securities_transacted, price
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            ''', (
+                trade_data.get('symbol', trade_data.get('ticker', '')),
+                trade_data.get('filingDate', None),
+                trade_data.get('transactionDate', None),
+                trade_data.get('reportingName', ''),
+                trade_data.get('transactionType', ''),
+                trade_data.get('securitiesOwned', 0),
+                trade_data.get('securitiesTransacted', 0),
+                trade_data.get('price', 0.0)
+            ))
+
+            conn.commit()
+            conn.close()
+            return True
+
+        except Exception as e:
+            logger.error(f"Error inserting FMP insider trade: {e}")
+            return False
+
+    def get_institutional_holdings(self, ticker: str) -> List[Dict]:
+        """
+        Get institutional holdings for a ticker.
+
+        Args:
+            ticker: Stock ticker symbol
+
+        Returns:
+            List of institutional holding records
+        """
+        try:
+            conn = self.get_connection()
+            cursor = conn.cursor()
+
+            cursor.execute('''
+                SELECT * FROM institutional_holdings
+                WHERE ticker = ?
+                ORDER BY date_reported DESC
+            ''', (ticker,))
+
+            rows = cursor.fetchall()
+            conn.close()
+
+            return [dict(row) for row in rows]
+
+        except Exception as e:
+            logger.error(f"Error querying institutional holdings: {e}")
             return []
 
 
