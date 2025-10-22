@@ -164,9 +164,9 @@ class SentimentAnalyzer:
             'vader_score': vader_result['compound'],
             'confidence': confidence,
             'subjectivity': textblob_result['subjectivity'],
-            'vader_positive': vader_result['positive'],
-            'vader_negative': vader_result['negative'],
-            'vader_neutral': vader_result['neutral']
+            'vader_positive': vader_result.get('pos', vader_result.get('positive', 0.0)),
+            'vader_negative': vader_result.get('neg', vader_result.get('negative', 0.0)),
+            'vader_neutral': vader_result.get('neu', vader_result.get('neutral', 0.0))
         }
 
     def analyze_batch(self, texts: List[str]) -> List[Dict[str, float]]:

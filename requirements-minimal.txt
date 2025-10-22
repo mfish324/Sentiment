@@ -1,0 +1,28 @@
+# Minimal requirements - core functionality only
+# Use this if you have issues installing the full requirements.txt
+
+# Core dependencies
+python-dotenv==1.0.0          # For managing API keys and environment variables
+requests==2.31.0               # For making HTTP requests to APIs
+
+# Twitter/X API
+tweepy==4.14.0                 # Official Twitter API library
+
+# Sentiment Analysis
+textblob==0.17.1              # Simple sentiment analysis library
+vaderSentiment==3.3.2         # VADER sentiment analyzer (good for social media)
+
+# Web scraping (for SEC EDGAR)
+beautifulsoup4==4.12.2        # HTML parsing
+lxml==4.9.4                    # XML/HTML parser
+
+# Utilities
+pytz==2023.3                  # Timezone handling
+python-dateutil==2.8.2        # Date utilities
+
+# Rate limiting
+ratelimit==2.2.1              # API rate limiting decorator
+
+# Note: Visualization and data analysis packages removed to avoid compilation issues
+# If you need pandas/matplotlib/numpy, install pre-built wheels:
+# pip install pandas matplotlib numpy plotly
